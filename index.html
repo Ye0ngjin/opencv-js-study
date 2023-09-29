@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam with OpenCV.js</title>
+</head>
+<body>
+    <video id="videoElement" width="640" height="480" autoplay></video>
+    <canvas id="outputCanvas" width="640" height="480"></canvas>
+
+    <script async src="opencv.js" onload="initializeOpenCV();" type="text/javascript"></script>
+    <script type="text/javascript">
+        let videoElement = document.getElementById('videoElement');
+        let outputCanvas = document.getElementById('outputCanvas');
+        let ctx = outputCanvas.getContext('2d');
+
+        function initializeOpenCV() {
+            cv.onRuntimeInitialized = function() {
+                console.log("OpenCV.js is ready");
+                startWebcam();
+            };
+        }
+
+        function startWebcam() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    videoElement.srcObject = stream;
+                })
+                .catch(function(error) {
+                    console.error("Error accessing webcam:", error);
+                });
+            }
+        }
+
+        function processVideo() {
+            let src = new cv.Mat(videoElement.height, videoElement.width, cv.CV_8UC4);
+            let dst = new cv.Mat();
+
+            videoElement.addEventListener('play', function() {
+                let $this = this; // workaround for certain browsers
+                (function loop() {
+                    if (!$this.paused && !$this.ended) {
+                        ctx.drawImage($this, 0, 0, $this.videoWidth, $this.videoHeight, 0, 0, outputCanvas.width, outputCanvas.height);
+                        src.data.set(ctx.getImageData(0, 0, $this.videoWidth, $this.videoHeight).data);
+
+                        // Perform image processing using OpenCV.js here
+                        // For example, you can apply filters or perform object detection
+
+                        // Display the processed image on the canvas
+                        cv.imshow(outputCanvas, src);
+
+                        requestAnimationFrame(loop);
+                    }
+                })();
+            });
+        }
+
+        processVideo(); // Start processing the webcam video
+    </script>
+</body>
+</html>
